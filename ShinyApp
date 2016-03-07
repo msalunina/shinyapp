@@ -1,0 +1,85 @@
+library(shiny)
+
+ui <- fluidPage(
+  
+  fluidRow(
+    column(5, offset = 5, tags$h2(tags$strong("Новые сапожки Маши")))
+  ),
+  
+  tags$hr(),
+  
+  fluidRow(
+    column(4,
+           tags$p(tags$strong("You know nothing, Snow."), "Термометр Маши сегодня показывает", tags$em("A"), "градусов на улице. По прогнозам синоптиков в течение суток температура 
+                  не изменится больше, чем на", tags$em("B"), "градусов. Маша хочет надеть свои новые резиновые сапожки, но для этого ей нужно, чтобы растаял снег. 
+                  Данное событие произойдет, только если температура будет выше", tags$em("C"), "градусов. Какова вероятность того, что Маша завтра наденет сапожки
+                  при заданном" , tags$em("C"), "?"),
+           tags$p(tags$strong(tags$em("P.S.")), "В силу своих принципов Маша самостоятельно исправляет деления на термометре по собственной системе, поэтому не стоит удивляться снегу
+                  при температуре 30 градусов."),
+           tags$hr(),
+           wellPanel(sliderInput(inputId = "range",  label = "Установите минимальную и максимальную температуру",
+                                 min = -50, max = 50, value = c(-25,25))),
+           wellPanel(sliderInput(inputId = "mean", label = "Установите температуру сегодня - параметр А",
+                                  value = 0, min = -50, max = 50)),
+           wellPanel(sliderInput(inputId = "var", label = "Установите отклонение от нормы - параметр B",
+                                 value = 5, min = 0, max = 10)),
+           wellPanel(numericInput("num", label = "Установите параметр С",
+                                  value = 0))),
+    column(8,
+           tags$br(),
+           plotOutput("plot", height = 700))
+  ),
+  
+  tags$hr(),
+  
+  fluidRow(
+    
+    column(8,
+           plotOutput("plot3", height = 600)),
+    column(4,
+           tags$p(tags$strong("Маша и теория вероятностей."), "Будучи студенткой факультета экономических наук, Маша приступила к изучению
+                  теории вероятности, но пока ещё не разбирается в многомерном нормальном распределении. Чтобы хоть как-то помочь ей в этом,
+                  необходимо построить плотность распределения вероятностей различных температур при заданных параметрах."),
+           tags$hr(),
+           wellPanel(sliderInput(inputId = "range3",  label = "Установите минимальную и максимальную температуру",
+                                 min = -50, max = 50, value = c(-25,25))),
+           wellPanel(sliderInput(inputId = "mean3", label = "Установите температуру сегодня",
+                                 value = -5, min = -50, max = 50)),
+           wellPanel(sliderInput(inputId = "var3", label = "Установите отклонение от нормы",
+                                 value = 5, min = 0, max = 10)))
+    )
+)
+
+
+server <- function(input, output) {
+  
+  output$plot <- renderPlot({
+    a <- input$range[1]
+    b <- input$range[2]
+    c <- input$mean
+    d <- input$var
+    height <- input$num
+    par(mar=c(4,4,4,4))
+    gr.height <- pnorm(height, mean = c, sd = d, lower.tail = FALSE)
+    plot(function(x) pnorm(x, mean = c, sd = d, lower.tail = FALSE), from = a, to = b,
+         main = "Вероятность того, что температура будет выше C (градусов)", xlab = "С (градусов)", ylab = "Вероятность")
+    curve(pnorm(x, mean = c, sd = d, lower.tail = FALSE), add = TRUE, col = "darkgreen", lwd = 2)
+    points(height, gr.height, cex = 2, pch = 21, bg = "grey")
+  })
+
+  output$plot3 <- renderPlot({
+    a3 <- input$range3[1]
+    b3 <- input$range3[2]
+    c3 <- input$mean3
+    d3 <- input$var3
+    par(mar=c(4,4,4,4))
+    plot(function(x) dnorm(x, mean = c3, sd = d3), from = a3, to = b3,
+         main = "Плотность распределения вероятностей", xlab = "С (градусов)", ylab = "F(C)")
+    lines(c(0, 0), c(0, 1.20), lwd = 2, col = "grey")
+    curve(dnorm(x, mean = c3, sd = d3), add = TRUE, col = "darkblue", lwd = 2)
+    par(new = TRUE)
+    plot(function(x) dnorm(x, mean = 0, sd = 1), from = a3, to = b3, lwd = 2, lty = 2, ylab = "", xlab = "", axes = FALSE)
+  })
+}
+
+shinyApp(ui = ui, server = server)
